@@ -2,7 +2,7 @@ import axios from "axios";
 import "../../../envConfig";
 import getOKXSignatureAndTimestamp from "../sign_okx_request";
 import { getUserPortfolioResponseType, TokenAssets } from "@/types/okx_types";
-import { Errors } from "@/errors/errors";
+import { Errors } from "@/errors/error_messages";
 import { MyError } from "@/errors/type";
 
 export default async function getUserPortfolio(user_address: string): Promise<TokenAssets[]> {
