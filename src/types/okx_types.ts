@@ -1,0 +1,22 @@
+import z from "zod";
+
+export const tokenAssetsType = z.object({
+    chainIndex: z.string(),
+    tokenContractAddress: z.string(),
+    symbol: z.string(),
+    balance: z.string().transform((arg) => Number.parseFloat(arg)),
+    tokenPrice: z.string().transform((arg) => Number.parseFloat(arg)),
+    isRiskToken: z.boolean(),
+    rawBalance: z.string(),
+    address: z.string()
+});
+
+export const getUserPortfolioResponseType = z.object({
+    code: z.string(),
+    msg: z.string(),
+    data: z.array(z.object({
+        tokenAssets: z.array(tokenAssetsType).optional()
+    }))
+});
+
+export type TokenAssets = z.infer<typeof tokenAssetsType>;
