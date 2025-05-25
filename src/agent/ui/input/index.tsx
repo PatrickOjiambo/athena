@@ -98,7 +98,7 @@ export default function MessageInput() {
           return (
             <div className="w-full p-2 rounded-md flex flex-row items-center gap-x-2">
               <textarea
-                placeholder="Ask Tantei about AI trading agents"
+                placeholder="Ask Athena about your crypto portfolio"
                 className="flex flex-row w-full bg-transparent placeholder:text-gray-300 text-[var(--foreground)] border-none min-h-10 max-h-20 resize-none focus:outline-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {

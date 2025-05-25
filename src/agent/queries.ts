@@ -4,17 +4,12 @@ import { type ModelOutput } from "./model"
 import router from "./utils/router"
 import axios from "axios"
 import { BASEHOST } from "@/integrations/basehost"
-
-
-export const getUserPortfolio = async (): Promise<any> => {
-    return `User Potfolio`
-}
-export const getNewsAboutuserHoldings = async (keyWords: string[]): Promise<any> => {
-    return `News about user holdings`
-}
+import getUserPortfolio from "./tools/get_user_portfolio"
+import { fetchNewsAboutUserHoldings } from "./tools/fetch-news"
 export const cryptoAdvisor = async (input: string): Promise<string> => {
-    const portfolio = await getUserPortfolio()
-    const newsAboutHoldings = await getNewsAboutuserHoldings(["OM", "ETH", "BTC"])
+    const portfolio = await getUserPortfolio("vwHq2nXm8bAoxPeXXJ9douzZHcahVCopuFjzLEbk3zv")
+    const listOfCoins = portfolio.map((coin) => coin.symbol.toUpperCase())
+    const newsAboutHoldings = await fetchNewsAboutUserHoldings(listOfCoins)
     const prompt = new PromptBuilder<ModelOutput>(router, 3, true)
     prompt.input({
         promptLevel: `1`,

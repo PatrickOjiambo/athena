@@ -1,6 +1,10 @@
-import {OpenAI} from "openai"
+import { OpenAI } from "openai"
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set in the environment variables.");
+}
 const openai = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    apiKey: OPENAI_API_KEY,
 })
 
 
@@ -18,7 +22,7 @@ export async function sendToLLM(prompt: {
     `)
     const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: messages, 
+        messages: messages,
         tools: [
             {
                 function: {
@@ -50,7 +54,7 @@ export function createPrompt(
     }
 }
 
-export function formatToJSON(dataStr: string){
+export function formatToJSON(dataStr: string) {
     // format the data to be in the format that the next task needs
     return JSON.parse(dataStr.trim())
 }

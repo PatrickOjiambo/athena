@@ -1,7 +1,11 @@
+"use server"
 import axios from "axios"
 import "dotenv/config"
 import { NewsApiResponse } from "@/types/agent/news"
-const APIKEY = process.env.NEWSDATAAPIKEY
+const APIKEY = process.env.NEXT_PUBLIC_NEWSDATA_API_KEY
+if (!APIKEY) {
+    throw new Error("NewsFeed API key is not defined")
+}
 export async function fetchNewsAboutUserHoldings(keyWords: string[]): Promise<any> {
     try {
         if (!APIKEY) {

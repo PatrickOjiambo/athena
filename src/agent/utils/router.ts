@@ -3,11 +3,14 @@ import { Router } from "../router"
 import { Model } from "../model";
 import { Effect } from "effect";
 
-
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set in the environment variables.");
+}
 const router = new Router()
 
 const openai = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY!, dangerouslyAllowBrowser: true
+    apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true
 })
 
 router.register(
