@@ -9,7 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aptos-connect/wallet-adapter-plugin": "^2.4.3",
     "@next/env": "^15.1.8",
+    "@okxconnect/core": "^1.8.6",
+    "@okxconnect/solana-provider": "^1.8.6",
+    "@okxconnect/ui": "^1.8.6",
+    "@okxweb3/coin-solana": "^1.1.0",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@solana/web3.js": "^1.98.2",
+    "@tabler/icons-react": "^3.33.0",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -17,6 +25,7 @@
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.28"
   },
