@@ -7,7 +7,22 @@ import axios from "axios";
 import { swapDataResponse } from "@/types/okx_types";
 import { Connection, VersionedTransaction, Transaction } from "@solana/web3.js";
 
+export default async function (user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<PreparedTransaction> {
+    try {
+        if (slippage > 1 || slippage < 0) {
+            throw new MyError("Invalid slippage value");
+        }
+        const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage.toString());
+        return prepareTransaction(swapData);
+    } catch(err) {
+        if (err instanceof MyError) {
+            throw err;
+        }
 
+        console.error("Error creating swap transaction", err);
+        throw new MyError(Errors.NOT_CREATE_SWAP);
+    }
+}
 
 async function getSwapDetails(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: string): Promise<string> {
     try {
@@ -115,22 +130,5 @@ async function prepareTransaction(callData: string): Promise<PreparedTransaction
         }
         console.error("Error preparing transaction:", error);
         throw new MyError(Errors.NOT_PREPARE_SWAP_TRANSACTION);
-    }
-}
-
-export default async function createSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<PreparedTransaction> {
-    try {
-        if (slippage > 1 || slippage < 0) {
-            throw new MyError("Invalid slippage value");
-        }
-        const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage.toString());
-        return prepareTransaction(swapData);
-    } catch(err) {
-        if (err instanceof MyError) {
-            throw err;
-        }
-
-        console.error("Error creating swap transaction", err);
-        throw new MyError(Errors.NOT_CREATE_SWAP);
     }
 }
