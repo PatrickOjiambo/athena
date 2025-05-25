@@ -118,9 +118,12 @@ async function prepareTransaction(callData: string): Promise<PreparedTransaction
     }
 }
 
-export default async function createSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: string): Promise<PreparedTransaction> {
+export default async function createSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<PreparedTransaction> {
     try {
-        const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage);
+        if (slippage > 1 || slippage < 0) {
+            throw new MyError("Invalid slippage value");
+        }
+        const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage.toString());
         return prepareTransaction(swapData);
     } catch(err) {
         if (err instanceof MyError) {
