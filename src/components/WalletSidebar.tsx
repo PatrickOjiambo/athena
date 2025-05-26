@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card } from './ui/card';
-import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { ArrowRight } from 'lucide-react';
 
@@ -49,7 +48,7 @@ const WalletSidebar: React.FC = () => {
   const riskScore = 75;
 
   return (
-    <aside className="w-80 border-r border-white/10 p-4 h-[calc(100vh-64px)] overflow-y-auto">
+    <aside className="w-80 border-r border-white/10 p-4 h-full overflow-y-auto">
       <div className="mb-6">
         <h2 className="text-lg font-bold mb-1">Wallet Balance</h2>
         <div className="flex items-baseline">
