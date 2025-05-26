@@ -43,6 +43,7 @@ export const OKXWalletButton = () => {
           variant="outline"
           size="sm"
           onClick={handleConnect}
+          className="bg-okx-purple text-white"
         // disabled={isLoading}
         >
           <IconWallet className="mr-2 h-4 w-4" /> Connect OKX Wallet
@@ -54,10 +55,10 @@ export const OKXWalletButton = () => {
             {publicKey?.slice(-4)}
           </div>
           <Button
-            variant="outline"
             size="sm"
             onClick={handleDisconnect}
             disabled={isLoading}
+            className="bg-okx-purple text-white"
           >
             <IconWallet className="mr-2 h-4 w-4" /> Disconnect
           </Button>
