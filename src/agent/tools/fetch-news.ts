@@ -26,6 +26,7 @@ export async function fetchNewsAboutUserHoldings(keyWords: string[]): Promise<an
             throw new Error("Failed to fetch news")
         }
         const newsData = response.data as NewsApiResponse
+        console.debug("Fetched news data:", newsData)
         if (newsData.status !== "success") {
             throw new Error("Error while fetching news")
         }

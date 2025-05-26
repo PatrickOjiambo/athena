@@ -81,11 +81,11 @@ entryPrompt.input({
         answer: "Athena is a web3 advisor agent, that can help you with your portfolio and answer any questions you have about it. I can also recommend swaps for you on different exchanges."
     }
     -----
-    If the user's input is something that requires more research like: I want to copy trades made by an AI trading agent.
+    If the user's input is something that requires more research like: Recommend swaps I can do.
     you should choose the **handOver** tool so that a more capable agent can handle the inquiry. and provide a detailed breakdown of the user's inquiry so that the next agent in the pipeline can understand the prompt, and take action.
     this is true also, if the user's query references an asset that is not in your instruction data.
     {
-        "reason": "The user wants to copy trades made by an AI trading agent, but this is not something I can do. I need to hand over the inquiry to another agent that is able to do this."
+        "reason": "Recommend swaps I can do, but this is not something I can do. I need to hand over the inquiry to another agent that is able to do this."
     }
     ------
     If the user's input is incomplete in any way and you need further clarification, from them use the **askBack** tool and pass in a question for them.

@@ -23,7 +23,6 @@ tradingPrompt
     You are presented with a couple of tools and need to choose which ones you can use to answer the user correctly and completely.
     Your tools include: 
     **GetUserPortfolio** - Use this tool to get all the assets and memecoins a user is holding and their distributions.
-    **GetUserProfitAndLoss** - Use this tool to get all the details about a user's profit and losss across different exhnages over time
     `,
         tools: [
             {
@@ -33,19 +32,12 @@ tradingPrompt
           can distribute and manage their assets`,
                 args: zodToJsonSchema(web3Advisor),
             },
-            {
-                name: "GetUserProfitAndLoss",
-                description:
-                    `Use this tool to answer a specific question about a users profit and loss across different exchanges over time`,
-                args: zodToJsonSchema(web3Advisor),
-            },
-            {
-                name: "GetUserPortfolio",
-                description:
-                    `Use this tool to answer a specific question about a users portfolio and to provide recommendations to the user on how they 
-          can distribute and manage their assets`,
-                args: zodToJsonSchema(web3Advisor),
-            }
+            // {
+            //     name: "GetUserProfitAndLoss",
+            //     description:
+            //         `Use this tool to answer a specific question about a users profit and loss across different exchanges over time`,
+            //     args: zodToJsonSchema(web3Advisor),
+            // },
         ],
     })
     .parse<ModelOutput>((input) => {
@@ -56,14 +48,14 @@ tradingPrompt
             let outputs: Array<string> = [];
             for (const response of responses) {
                 switch (response.name) {
-                    case "getAgentDetailsFromDB": {
+                    case "GetUserPortfolio": {
                         const parsed = web3Advisor.safeParse(response.args);
                         if (!parsed.success) throw new Error("Invalid query");
                         const resp = await cryptoAdvisor(parsed.data.query);
                         outputs.push(resp);
                         break;
                     }
-                    
+
                     default: {
                         throw new Error("No response was chosen");
                     }

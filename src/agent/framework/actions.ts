@@ -18,19 +18,19 @@ export type UIBLOCK = z.infer<typeof uiBlockSchema>;
 
 interface _UIBLOCK {
   name: string;
-  props: Zod.ZodTypeAny;
+  props: z.ZodTypeAny;
   description: string;
   type: "display" | "action";
 }
 
 const UI_BLOCKS: Array<_UIBLOCK> = [
   {
-    name: "COPY",
+    name: "SWAP",
     props: z.object({
       assetName: z.string(),
       quantity: z.number(),
     }),
-    description: "A Button for copying an agent's trades",
+    description: "A Button for swapping an asset to another",
     type: "action",
   },
   {
@@ -59,7 +59,7 @@ export const CHOOSE_UI_BLOCK_ACTION = Action.define<
 >({
   name: "CHOOSE_UI_BLOCK",
   description:
-    "Choose a UI block to display, and determine the props to pass to it, based on the result of the task. There can be multiple UI blocks, chosen especially if the user asks to copy an agent's trades.",
+    "Choose a UI block to display, and determine the props to pass to it, based on the result of the task. There can be multiple UI blocks, chosen especially if the user wants you to suggest swaps they can do",
   outputSchema: z.object({
     uiBlocks: z.array(uiBlockSchema),
   }),

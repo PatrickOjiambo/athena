@@ -6,12 +6,14 @@ import { toast, Toaster } from "sonner";
 import axios from "axios"
 import { BASEHOST } from "@/integrations/basehost";
 interface Props {
-    agentName: string;
-    strategy: number;
-    agentAddress: string;
+    toTokenSymbol: string;
+    fromTokenSymbol: string;
+    toTokenAddress: string;
+    fromTokenAddress: string;
+    amount: string;
 }
 
-export function Copy(props: Props) {
+export function Swap(props: Props) {
 
     return (
         <div className="w-full mt-2">

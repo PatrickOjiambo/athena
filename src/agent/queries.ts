@@ -5,11 +5,13 @@ import router from "./utils/router"
 import axios from "axios"
 import { BASEHOST } from "@/integrations/basehost"
 import getUserPortfolio from "./tools/get_user_portfolio"
-import { fetchNewsAboutUserHoldings } from "./tools/fetch-news"
+// import { fetchNewsAboutUserHoldings } from "./tools/fetch-news"
 export const cryptoAdvisor = async (input: string): Promise<string> => {
     const portfolio = await getUserPortfolio("vwHq2nXm8bAoxPeXXJ9douzZHcahVCopuFjzLEbk3zv")
-    const listOfCoins = portfolio.map((coin) => coin.symbol.toUpperCase())
-    const newsAboutHoldings = await fetchNewsAboutUserHoldings(listOfCoins)
+    // const listOfCoins = portfolio.map((coin) => coin.symbol.toUpperCase())
+    // const newsAboutHoldings = await fetchNewsAboutUserHoldings(listOfCoins)
+    // console.debug("Fetched news about holdings:", newsAboutHoldings)
+    console.log("Portfolio details:", portfolio)
     const prompt = new PromptBuilder<ModelOutput>(router, 3, true)
     prompt.input({
         promptLevel: `1`,
@@ -18,21 +20,13 @@ export const cryptoAdvisor = async (input: string): Promise<string> => {
     You job is to provide a clear and concise answer to the users question.
     You have access to the user's portfolio and latest news about the coins they are holding.
     Below are some of the advices you should consider to give them about their web3 portfolio: FEEL FREE TO OFFER ANY OTHER ADVICE THAT MAKES SENSE.
-    1. Diversification: Encourage users to diversify their portfolio across different assets to reduce risk.
-    2. Risk Management: Advise users to assess their risk tolerance and adjust their portfolio accordingly.
-    3. Long-term vs Short-term: Discuss the difference between long-term and short-term investments and how they can impact portfolio strategy.
-    4. Research: Emphasize the importance of conducting thorough research before making investment decisions.
-    5. Market Trends: Provide insights on current market trends and how they may affect the user's portfolio.
-    6. Asset Allocation: Suggest a balanced allocation of assets based on the user's investment goals.
-    7. Security: Remind users to prioritize security measures for their digital assets.
-    8. Tax Implications: Discuss potential tax implications of their investment decisions.
+    THE ADVICE SHOULD BE GIVEN BASED ON THEIR PORTFOLIO AND THE CURRENT MARKET CONDITIONS.
+    DON'T GIVE GENERAL ADVICES, IF THE USER DOESN'T HAVE ANY ASSETS, DON'T GIVE THEM ADVICE.
     
     <portfoliodetails>
     ${JSON.stringify(portfolio, null, 2)}
     </portfoliodetails>
-    <newsaboutholdings>
-    ${JSON.stringify(newsAboutHoldings, null, 2)}
-    </newsaboutholdings>
+   
         `,
     })
 

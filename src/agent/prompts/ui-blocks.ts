@@ -10,10 +10,13 @@ const displaySummary = z.object({
 })
 
 const displayButton = z.object({
-    agentName: z.string(),
-    strategy: z.string(),
+    fromTokenSymbol: z.string(),
+    toTokenSymbol: z.string(),
+    fromTokenAddress: z.string(),
+    toTokenAddress: z.string(),
+    amount: z.number(),
     action: z.enum(['SWAP', "CANCEL"]),
-    agentAddress: z.string()
+
 })
 
 

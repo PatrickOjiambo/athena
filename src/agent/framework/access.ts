@@ -39,7 +39,7 @@ export async function getCompletion(
           response.name == "displaySummary"
             ? "DISPLAY"
             : response.name == "displayButton"
-              ? "COPY"
+              ? "SWAP"
               : "unknown",
         description: "response",
         props: response.args,

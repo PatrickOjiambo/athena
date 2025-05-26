@@ -47,7 +47,7 @@ export default function MessageInput() {
       const valid_messages = messages
         ?.map((message) => message.blocks)
         ?.flat()
-        ?.filter((m) => m.name !== "COPY");
+        ?.filter((m) => m.name !== "SWAP");
 
       const prepareMessageHistory = valid_messages.map((message) => {
         return {
