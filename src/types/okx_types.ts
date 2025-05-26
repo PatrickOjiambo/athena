@@ -19,4 +19,12 @@ export const getUserPortfolioResponseType = z.object({
     }))
 });
 
+export const swapDataType = z.object({
+    tx: z.object({
+        data: z.string()
+    })
+});
+
+export const swapDataResponse = z.array(swapDataType);
+
 export type TokenAssets = z.infer<typeof tokenAssetsType>;
