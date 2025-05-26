@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { OKXUniversalConnectUI, THEME } from "@okxconnect/ui";
 import { OKXSolanaProvider } from "@okxconnect/solana-provider";
 import { Transaction } from "@solana/web3.js";
-
-const SOLANA_TESTNET_CHAIN =
-  "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1LrZCuF3gMQ8";
+import { toast } from "sonner";
+const SOLANA_MAINET_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+// const SOLANA_TESTNET_CHAIN = "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z";
 
 export interface WalletState {
   isConnected: boolean;
@@ -25,8 +25,11 @@ export const useOKXWallet = () => {
     error: null,
   });
 
-  const [universalUi, setUniversalUi] = useState<any>(null);
-  const [solanaProvider, setSolanaProvider] = useState<any>(null);
+  const [universalUi, setUniversalUi] = useState<OKXUniversalConnectUI | null>(
+    null,
+  );
+  const [solanaProvider, setSolanaProvider] =
+    useState<OKXSolanaProvider | null>(null);
 
   // Init on mount
   useEffect(() => {
@@ -38,8 +41,9 @@ export const useOKXWallet = () => {
             icon: "https://your-dapp-icon-url.com/icon.png",
           },
           actionsConfiguration: {
+            returnStrategy: "tg://resolve",
             modals: "all",
-            returnStrategy: "none",
+            tmaReturnUrl: "back",
           },
           language: "en_US",
           uiPreferences: {
@@ -65,11 +69,15 @@ export const useOKXWallet = () => {
       if (!universalUi || !solanaProvider || !shouldReconnect) return;
 
       try {
-        const accountInfo =
-          await solanaProvider.getAccount(SOLANA_TESTNET_CHAIN);
+        const accountInfo = solanaProvider.getAccount(SOLANA_MAINET_CHAIN);
+        if (!accountInfo) {
+          toast.warning("unable to restore session");
+          console.warn("account info is undefined");
+          return;
+        }
         setState({
           isConnected: true,
-          publicKey: accountInfo.address,
+          publicKey: accountInfo?.address,
           account: accountInfo,
           isLoading: false,
           error: null,
@@ -92,14 +100,7 @@ export const useOKXWallet = () => {
       const session = await universalUi.openModal({
         namespaces: {
           solana: {
-            chains: [SOLANA_TESTNET_CHAIN],
-            methods: [
-              "solana_getAccounts",
-              "solana_signMessage",
-              "solana_signTransaction",
-              "solana_signAndSendTransaction",
-            ],
-            events: ["accountsChanged", "chainChanged"],
+            chains: [SOLANA_MAINET_CHAIN],
           },
         },
       });
@@ -148,7 +149,7 @@ export const useOKXWallet = () => {
     async (message: string) => {
       if (!solanaProvider || !state.publicKey)
         throw new Error("Wallet not connected");
-      return solanaProvider.signMessage(message, SOLANA_TESTNET_CHAIN);
+      return solanaProvider.signMessage(message, SOLANA_MAINET_CHAIN);
     },
     [solanaProvider, state.publicKey],
   );
@@ -157,7 +158,7 @@ export const useOKXWallet = () => {
     async (transaction: Transaction) => {
       if (!solanaProvider || !state.publicKey)
         throw new Error("Wallet not connected");
-      return solanaProvider.signTransaction(transaction, SOLANA_TESTNET_CHAIN);
+      return solanaProvider.signTransaction(transaction, SOLANA_MAINET_CHAIN);
     },
     [solanaProvider, state.publicKey],
   );
@@ -168,7 +169,7 @@ export const useOKXWallet = () => {
         throw new Error("Wallet not connected");
       return solanaProvider.signAndSendTransaction(
         transaction,
-        SOLANA_TESTNET_CHAIN,
+        SOLANA_MAINET_CHAIN,
       );
     },
     [solanaProvider, state.publicKey],
