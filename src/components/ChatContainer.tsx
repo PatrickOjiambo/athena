@@ -81,10 +81,10 @@ const ChatContainer: React.FC = () => {
   const [showTradeModal, setShowTradeModal] = useState(false);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] flex-1">
+    <div className="flex h-full flex-col flex-1">
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 scrollbar-none"
+        className="flex-1 p-4"
       >
         {messages.map((msg) => (
           <ChatMessage 
