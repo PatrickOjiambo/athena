@@ -14,12 +14,12 @@ const Dashboard = () => {
         <WalletSidebar />
 
         <div className="flex-1 overflow-hidden">
-          <Tabs defaultValue="chat" className="w-full h-full">
+          <Tabs defaultValue="portfolio" className="w-full h-full">
             <div className="border-b border-white/10 px-6">
               <TabsList className="bg-transparent">
                 <TabsTrigger
                   value="chat"
-                  className="cursor-pointer data-[state=active]:bg-white/8"
+                  className="hidden cursor-pointer data-[state=active]:bg-white/8"
                 >
                   Chat
                 </TabsTrigger>
@@ -34,7 +34,7 @@ const Dashboard = () => {
 
             <TabsContent
               value="chat"
-              className="h-[calc(100%-41px)] m-0 overflow-hidden"
+              className="hidden h-[calc(100%-41px)] m-0 overflow-hidden"
             >
               <ChatContainer />
             </TabsContent>
