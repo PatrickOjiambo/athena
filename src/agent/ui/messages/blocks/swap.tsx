@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import getUserPortfolio from "@/agent/tools/get_user_portfolio";
 import { getListOfTokens } from "@/agent/tools/get_list_of_tokens";
 import { useOKXWallet } from "@/hooks/useOKXWallet";
-import CreateSwapTransaction from "@/agent/tools/create_swap_transaction";
-import { VersionedTransaction, Transaction } from "@solana/web3.js";
+import { CreateSwapTransaction } from "@/agent/tools/create_swap_transaction";
+import { Connection, VersionedTransaction, Transaction } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -15,15 +15,9 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { set } from "date-fns";
+import { MyError } from "@/errors/type";
+import base58 from "bs58";
+import { Errors } from "@/errors/error_messages";
 
 interface SwapProps {
     fromTokenSymbol: string;
@@ -36,7 +30,58 @@ interface BridgeTokenPairs {
     toTokenAddress: string;
     decimalsSold: string
 }
+interface PreparedTransaction {
+    transaction: Transaction | VersionedTransaction,
+    recentBlockHash: {
+        blockhash: string,
+        lastValidBlockHeight: number
+    }
+}
+async function prepareTransaction(callData: string): Promise<PreparedTransaction> {
+    try {
+        if (!process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
+            throw new MyError("Environment Variable Setup Error: Set SOLANA_RPC_URL in env variables")
+        }
 
+        // Initialize Solana connection
+        const connection = new Connection(`${process.env.NEXT_PUBLIC_SOLANA_RPC_URL}`, {
+            confirmTransactionInitialTimeout: 5000
+        });
+
+        // Decode the base58 encoded transaction data
+        const decodedTransaction = base58.decode(callData);
+
+        // Get the latest blockhash
+        const recentBlockHash = await connection.getLatestBlockhash();
+        console.log("Got blockhash:", recentBlockHash.blockhash);
+
+        let tx;
+
+        // Try to deserialize as a versioned transaction first
+        try {
+            tx = VersionedTransaction.deserialize(decodedTransaction);
+            console.log("Successfully created versioned transaction");
+            tx.message.recentBlockhash = recentBlockHash.blockhash;
+        } catch (e) {
+            // Fall back to legacy transaction if versioned fails
+            console.log("Versioned transaction failed, trying legacy:", e);
+            tx = Transaction.from(decodedTransaction);
+            console.log("Successfully created legacy transaction");
+            tx.recentBlockhash = recentBlockHash.blockhash;
+        }
+
+        return {
+            transaction: tx,
+            recentBlockHash
+        };
+    } catch (error) {
+        if (error instanceof MyError) {
+            throw error;
+        }
+        console.error("Error preparing transaction:", error);
+        throw new MyError(Errors.NOT_PREPARE_SWAP_TRANSACTION);
+    }
+}
 //SOL "11111111111111111111111111111111"
 //DECIMALS 9
 export function Swap({ fromTokenSymbol, toTokenSymbol }: SwapProps) {
@@ -46,14 +91,14 @@ export function Swap({ fromTokenSymbol, toTokenSymbol }: SwapProps) {
     const [tokenPair, setTokenPair] = useState<BridgeTokenPairs>();
     const [isLoading, setIsLoading] = useState(false);
     const [openConfirm, setOpenConfirm] = useState(false);
-    const { isConnected, connect, disconnect, publicKey, signAndSendTransaction } = useOKXWallet();
+    const { isConnected, publicKey, signAndSendTransaction } = useOKXWallet();
     const [amount, setAmount] = useState<number>();
 
     useEffect(() => {
         console.log("[Swap/useEffect] Running useEffect with isConnected:", isConnected, "publicKey:", publicKey);
 
         async function fetchDetails() {
-            
+
             if (!publicKey) {
                 console.log("[Swap/fetchDetails] No public key available, skipping fetch");
                 return;
@@ -148,27 +193,43 @@ export function Swap({ fromTokenSymbol, toTokenSymbol }: SwapProps) {
                 slippage: 0.01
             });
 
-            const transaction = await CreateSwapTransaction(
+            const callData = await CreateSwapTransaction(
                 publicKey,
                 amount * Math.pow(10, parseInt(tokenPair.decimalsSold)),
                 tokenPair.fromTokenAddress,
                 tokenPair.toTokenAddress,
                 0.01
             );
+            const preparedTransaction = await prepareTransaction(callData);
 
-            if (!transaction) {
+            if (!preparedTransaction) {
                 console.error("[Swap/handleSwapTokens] Failed to create transaction");
                 toast.error("Failed to create swap transaction. Please try again.");
                 return;
             }
 
-            console.log("[Swap/handleSwapTokens] Transaction created:", transaction);
+            console.log("[Swap/handleSwapTokens] Transaction created:", preparedTransaction);
             setIsLoading(true);
             console.log("[Swap/handleSwapTokens] Set loading to true");
 
-            if (transaction.transaction instanceof Transaction) {
+            if (preparedTransaction.transaction instanceof Transaction) {
                 console.log("[Swap/handleSwapTokens] Handling legacy Transaction");
-                const signedTransaction = await signAndSendTransaction(transaction.transaction);
+                const signedTransaction = await signAndSendTransaction(preparedTransaction.transaction);
+
+                if (!signedTransaction) {
+                    console.error("[Swap/handleSwapTokens] Failed to sign transaction");
+                    toast.error("Failed to sign transaction. Please try again.");
+                    setIsLoading(false);
+                    return;
+                }
+                console.log("[Swap/handleSwapTokens] Signed transaction:", signedTransaction);
+
+                console.log("[Swap/handleSwapTokens] Transaction signed and sent:", signedTransaction);
+                toast.success("Swap completed successfully!");
+            } else if (preparedTransaction.transaction instanceof VersionedTransaction) {
+                console.log("[Swap/handleSwapTokens] Handling legacy Transaction");
+                const signedTransaction = await signAndSendTransaction(preparedTransaction.transaction);
+                console.log("[Swap/handleSwapTokens] Signed transaction:", signedTransaction);
 
                 if (!signedTransaction) {
                     console.error("[Swap/handleSwapTokens] Failed to sign transaction");
@@ -179,11 +240,12 @@ export function Swap({ fromTokenSymbol, toTokenSymbol }: SwapProps) {
 
                 console.log("[Swap/handleSwapTokens] Transaction signed and sent:", signedTransaction);
                 toast.success("Swap completed successfully!");
-            } else {
-                console.log("[Swap/handleSwapTokens] Handling VersionedTransaction");
-                // TODO: Implement VersionedTransaction handling
-                console.warn("VersionedTransaction handling not yet implemented");
-                toast.warning("Versioned transactions not yet supported");
+            }
+            else {
+                console.error("[Swap/handleSwapTokens] Unsupported transaction type:", preparedTransaction.transaction);
+                toast.error("Unsupported transaction type. Please try again.");
+                setIsLoading(false);
+                return;
             }
         } catch (error) {
             console.error("[Swap/handleSwapTokens] Error during swap:", error);

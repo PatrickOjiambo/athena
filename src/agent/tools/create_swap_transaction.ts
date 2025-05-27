@@ -2,13 +2,12 @@
 import { Errors } from "@/errors/error_messages";
 import { MyError } from "@/errors/type";
 import base58 from "bs58";
-import "../../../envConfig";
 import getOKXSignatureAndTimestamp from "../sign_okx_request";
 import axios from "axios";
 import { swapDataResponse } from "@/types/okx_types";
 import { Connection, VersionedTransaction, Transaction } from "@solana/web3.js";
 
-export default async function CreateSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<PreparedTransaction> {
+export async function CreateSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<string> {
     try {
         console.log("Creating swap transaction with params:", {
             user_wallet,
@@ -21,8 +20,8 @@ export default async function CreateSwapTransaction(user_wallet: string, amount:
             throw new MyError("Invalid slippage value");
         }
         const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage.toString());
-        return prepareTransaction(swapData);
-    } catch (err) {
+        return swapData;
+    } catch(err) {
         if (err instanceof MyError) {
             throw err;
         }
@@ -95,7 +94,7 @@ interface PreparedTransaction {
     }
 }
 
-async function prepareTransaction(callData: string): Promise<PreparedTransaction> {
+export async function prepareTransaction(callData: string): Promise<PreparedTransaction> {
     try {
         if (!process.env.SOLANA_RPC_URL) {
             throw new MyError("Environment Variable Setup Error: Set SOLANA_RPC_URL in env variables")

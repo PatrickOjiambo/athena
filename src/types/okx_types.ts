@@ -8,7 +8,6 @@ export const tokenAssetsType = z.object({
     tokenPrice: z.string().transform((arg) => Number.parseFloat(arg)),
     isRiskToken: z.boolean(),
     rawBalance: z.string(),
-    address: z.string()
 });
 
 export const getUserPortfolioResponseType = z.object({
@@ -36,6 +35,43 @@ export const getBridgeTokensResponseType = z.object({
     msg: z.string(),
     data: z.array(bridgeTokenType)
 });
+
+export const transactionHistory = z.object({
+    chainIndex: z.string(),
+    txHash: z.string(),
+    methodId: z.string(),
+    nonce: z.string(),
+    txTime: z.string(),
+    from: z.array(z.object({
+        address: z.string(),
+        amount: z.string(),
+    })),
+    to: z.array(z.object({
+        address: z.string(),
+        amount: z.string(),
+    })),
+    tokenContractAddress: z.string(),
+    amount: z.string(),
+    symbol: z.string(),
+    txFee: z.string(),
+    txStatus: z.string(),
+    hitBlacklist: z.boolean(),
+    itype: z.string()
+})
+
+export const transactionHistoryResponseType = z.object({
+    code: z.string(),
+    msg: z.string(),
+    data: z.array(z.object({
+        cursor: z.string(),
+        transactions: z.array(transactionHistory).nullable()
+    })),
+})
+
 export const swapDataResponse = z.array(swapDataType);
 export type BridgeTokenPairs = z.infer<typeof bridgeTokenType>;
+
+
 export type TokenAssets = z.infer<typeof tokenAssetsType>;
+export type TransactionHistory = z.infer<typeof transactionHistory>;
+

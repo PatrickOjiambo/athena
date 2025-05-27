@@ -31,7 +31,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
       <Button 
         type="submit" 
         disabled={isLoading || !message.trim()}
-        className="bg-okx-purple hover:bg-okx-purple/80 text-white"
+        className="bg-okx-purple hover:bg-okx-purple/80 cursor-pointer text-white"
       >
         Send
       </Button>

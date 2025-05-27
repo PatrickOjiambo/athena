@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}> {/* Force dark mode */}
+    <html lang="en" className={`${inter.variable} dark`}>
       <body className="font-sans">
         {children}
         <FloatingChat />

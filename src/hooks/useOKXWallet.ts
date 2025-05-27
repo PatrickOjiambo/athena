@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { OKXUniversalConnectUI, THEME } from "@okxconnect/ui";
 import { OKXSolanaProvider } from "@okxconnect/solana-provider";
-import { Transaction } from "@solana/web3.js";
+import { Transaction, VersionedTransaction } from "@solana/web3.js";
 import { toast } from "sonner";
 const SOLANA_MAINET_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 // const SOLANA_TESTNET_CHAIN = "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z";
@@ -164,7 +164,7 @@ export const useOKXWallet = () => {
   );
 
   const signAndSendTransaction = useCallback(
-    async (transaction: Transaction) => {
+    async (transaction: Transaction | VersionedTransaction) => {
       if (!solanaProvider || !state.publicKey)
         throw new Error("Wallet not connected");
       return solanaProvider.signAndSendTransaction(
