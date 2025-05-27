@@ -22,7 +22,7 @@ const TokenCard: React.FC<{ token: TokenAssets; priceChange?: number }> = ({
             <span className="text-xs font-bold">{token.symbol}</span>
           </div>
           <div>
-            <p className="text-sm font-medium">{token.chainName}</p>
+            <p className="text-sm font-medium">{token.symbol}</p>
             <p className="text-xs text-muted-foreground">{token.balance.toFixed(4)} {token.symbol}</p>
           </div>
         </div>
@@ -182,10 +182,6 @@ const WalletSidebar: React.FC = () => {
       <div>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-medium">Assets</h3>
-          <button className="text-xs text-okx-purple flex items-center">
-            View All 
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </button>
         </div>
         
         {tokens.length > 0 ? (
