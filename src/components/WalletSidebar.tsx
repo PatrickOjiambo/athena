@@ -41,7 +41,6 @@ const TokenCard: React.FC<{ token: TokenAssets; priceChange?: number }> = ({
 };
 
 const WalletSidebar: React.FC = () => {
-
   const { isConnected, publicKey } = useOKXWallet();
   const [tokens, setTokens] = useState<TokenAssets[]>([]);
   const [totalValue, setTotalValue] = useState<number>(0);
@@ -51,7 +50,9 @@ const WalletSidebar: React.FC = () => {
  
   const fetchTokenData = async (address: string) => {
     try {
+      setError(null);
       setIsLoading(true);
+      
       console.log("Fetching for address:", address);
       const tokenAssets = await getUserPortfolio(address);
       setTokens(tokenAssets);
