@@ -43,7 +43,7 @@ export const OKXWalletButton = () => {
           variant="outline"
           size="sm"
           onClick={handleConnect}
-          className="bg-okx-purple text-white"
+          className="bg-okx-purple text-white cursor-pointer hover:bg-okx-purple/80"
         // disabled={isLoading}
         >
           <IconWallet className="mr-2 h-4 w-4" /> Connect OKX Wallet

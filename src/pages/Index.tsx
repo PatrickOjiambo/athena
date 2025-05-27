@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 import AppHeader from '@/components/AppHeader';
 import WalletSidebar from '@/components/WalletSidebar';
 import ChatContainer from '@/components/ChatContainer';
@@ -18,8 +18,8 @@ const Index = () => {
           <Tabs defaultValue="chat" className="w-full h-full">
             <div className="border-b border-white/10 px-6">
               <TabsList className="bg-transparent">
-                <TabsTrigger value="chat" className="data-[state=active]:bg-white/5">Chat</TabsTrigger>
-                <TabsTrigger value="portfolio" className="data-[state=active]:bg-white/5">Portfolio</TabsTrigger>
+                <TabsTrigger value="chat" className="cursor-pointer data-[state=active]:bg-white/8">Chat</TabsTrigger>
+                <TabsTrigger value="portfolio" className="cursor-pointer data-[state=active]:bg-white/8">Portfolio</TabsTrigger>
               </TabsList>
             </div>
             

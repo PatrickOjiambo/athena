@@ -8,7 +8,9 @@ export const tokenAssetsType = z.object({
     tokenPrice: z.string().transform((arg) => Number.parseFloat(arg)),
     isRiskToken: z.boolean(),
     rawBalance: z.string(),
-    address: z.string()
+    address: z.string(),
+    image: z.string(),
+    chainName: z.string()
 });
 
 export const getUserPortfolioResponseType = z.object({
