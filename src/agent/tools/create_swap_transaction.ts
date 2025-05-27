@@ -7,8 +7,15 @@ import axios from "axios";
 import { swapDataResponse } from "@/types/okx_types";
 import { Connection, VersionedTransaction, Transaction } from "@solana/web3.js";
 
-export default async function (user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<string> {
+export async function CreateSwapTransaction(user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<string> {
     try {
+        console.log("Creating swap transaction with params:", {
+            user_wallet,
+            amount,
+            fromTokenAddress,
+            toTokenAddress,
+            slippage
+        });
         if (slippage > 1 || slippage < 0) {
             throw new MyError("Invalid slippage value");
         }
@@ -80,16 +87,16 @@ async function getSwapDetails(user_wallet: string, amount: number, fromTokenAddr
 }
 
 interface PreparedTransaction {
-    transaction: Transaction | VersionedTransaction, 
+    transaction: Transaction | VersionedTransaction,
     recentBlockHash: {
         blockhash: string,
         lastValidBlockHeight: number
     }
 }
 
-async function prepareTransaction(callData: string): Promise<PreparedTransaction> {
+export async function prepareTransaction(callData: string): Promise<PreparedTransaction> {
     try {
-        if(!process.env.SOLANA_RPC_URL) {
+        if (!process.env.SOLANA_RPC_URL) {
             throw new MyError("Environment Variable Setup Error: Set SOLANA_RPC_URL in env variables")
         }
 

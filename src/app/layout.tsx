@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
-
+import FloatingChat from '@/agent/floatingchat';
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
@@ -16,6 +16,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="font-sans">
         {children}
+        <FloatingChat />
       </body>
     </html>
   );

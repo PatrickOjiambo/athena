@@ -23,6 +23,18 @@ export const swapDataType = z.object({
         data: z.string()
     })
 });
+export const bridgeTokenType = z.object({
+    decimals: z.string(),
+    tokenContractAddress: z.string(),
+    tokenLogoUrl: z.string(),
+    tokenName: z.string(),
+    tokenSymbol: z.string(),
+})
+export const getBridgeTokensResponseType = z.object({
+    code: z.string(),
+    msg: z.string(),
+    data: z.array(bridgeTokenType)
+});
 
 export const transactionHistory = z.object({
     chainIndex: z.string(),
@@ -57,6 +69,9 @@ export const transactionHistoryResponseType = z.object({
 })
 
 export const swapDataResponse = z.array(swapDataType);
+export type BridgeTokenPairs = z.infer<typeof bridgeTokenType>;
+
 
 export type TokenAssets = z.infer<typeof tokenAssetsType>;
 export type TransactionHistory = z.infer<typeof transactionHistory>;
+
