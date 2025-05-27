@@ -2,13 +2,15 @@ import { PromptBuilder } from "./builder"
 import { Effect, Either } from "effect"
 import { type ModelOutput } from "./model"
 import router from "./utils/router"
-import axios from "axios"
-import { BASEHOST } from "@/integrations/basehost"
 import getUserPortfolio from "./tools/get_user_portfolio"
+import { getListOfTokens } from "./tools/get_list_of_tokens"
 // import { fetchNewsAboutUserHoldings } from "./tools/fetch-news"
 export const cryptoAdvisor = async (input: string): Promise<string> => {
     const portfolio = await getUserPortfolio("vwHq2nXm8bAoxPeXXJ9douzZHcahVCopuFjzLEbk3zv")
-    // const listOfCoins = portfolio.map((coin) => coin.symbol.toUpperCase())
+    const allTokens = await getListOfTokens()
+    console.log("All tokens available to swap to ==> ", allTokens);
+     const listOfTokens = allTokens.map((token)=> token.tokenSymbol)
+     console.log("List of tokens available to swap to:", listOfTokens);
     // const newsAboutHoldings = await fetchNewsAboutUserHoldings(listOfCoins)
     // console.debug("Fetched news about holdings:", newsAboutHoldings)
     console.log("Portfolio details:", portfolio)
@@ -22,10 +24,17 @@ export const cryptoAdvisor = async (input: string): Promise<string> => {
     Below are some of the advices you should consider to give them about their web3 portfolio: FEEL FREE TO OFFER ANY OTHER ADVICE THAT MAKES SENSE.
     THE ADVICE SHOULD BE GIVEN BASED ON THEIR PORTFOLIO AND THE CURRENT MARKET CONDITIONS.
     DON'T GIVE GENERAL ADVICES, IF THE USER DOESN'T HAVE ANY ASSETS, DON'T GIVE THEM ADVICE.
-    
+    YOU HAVE ACCESS TO THE SYMBOLS OF ALL COINS THAT THE USER CAN SWAP TO, SO YOU CAN OFFER THEM ADVICE ON WHICH COIN TO SWAP TO.
+    A USER CAN SWAP TO ANY COIN THAT IS AVAILABLE IN THE LIST OF TOKENS.
+    IF A USER ASKS FOR A SPECIFIC COIN TO SWAP TO, ALWAYS RESPOND WITH USDC
+    THEY CAN ASK FOR HELP TO SWAP TO A SPECIFIC COIN. ONLY SUGGEST ONE COIN THEY SHOULD SWAP TO.
+    You can also provide them with a list of tokens they can swap to, but only if they ask for it.
     <portfoliodetails>
     ${JSON.stringify(portfolio, null, 2)}
     </portfoliodetails>
+    <symbolsofalltokensAvailableToSwapTo>
+    ${listOfTokens.slice(0, 10).join(", ")}
+    </symbolsofalltokensAvailableToSwapTo>
    
         `,
     })

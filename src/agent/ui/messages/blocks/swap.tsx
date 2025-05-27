@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, ArrowDown, ChevronDown, Info } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
-import { BASEHOST } from "@/integrations/basehost";
-
+import getUserPortfolio from "@/agent/tools/get_user_portfolio";
+import { getListOfTokens } from "@/agent/tools/get_list_of_tokens";
+import { useOKXWallet } from "@/hooks/useOKXWallet";
+import CreateSwapTransaction from "@/agent/tools/create_swap_transaction";
+import { VersionedTransaction, Transaction } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -21,56 +23,190 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-
-interface Token {
-    symbol: string;
-    address: string;
-    balance: string;
-    logo?: string;
-}
+import { set } from "date-fns";
 
 interface SwapProps {
-    tokens: Token[];
-    defaultFromToken?: Token;
-    defaultToToken?: Token;
+    fromTokenSymbol: string;
+    toTokenSymbol: string;
+}
+interface BridgeTokenPairs {
+    fromTokenSymbol: string;
+    toTokenSymbol: string;
+    fromTokenAddress: string;
+    toTokenAddress: string;
+    decimalsSold: string
 }
 
-export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
-    const [fromToken, setFromToken] = useState<Token>(defaultFromToken || tokens[0]);
-    const [toToken, setToToken] = useState<Token>(defaultToToken || tokens[1]);
-    const [amount, setAmount] = useState("");
+//SOL "11111111111111111111111111111111"
+//DECIMALS 9
+export function Swap({ fromTokenSymbol, toTokenSymbol }: SwapProps) {
+    console.log("[Swap] Initializing with props:", { fromTokenSymbol, toTokenSymbol });
+    const [fromToken, setFromToken] = useState<string>()
+    const [toToken, setToToken] = useState<string>();
+    const [tokenPair, setTokenPair] = useState<BridgeTokenPairs>();
     const [isLoading, setIsLoading] = useState(false);
     const [openConfirm, setOpenConfirm] = useState(false);
-    const [slippage, setSlippage] = useState(0.5);
+    const { isConnected, connect, disconnect, publicKey, signAndSendTransaction } = useOKXWallet();
+    const [amount, setAmount] = useState<number>();
 
-    const handleSwapTokens = () => {
-        const temp = fromToken;
-        setFromToken(toToken);
-        setToToken(temp);
-    };
+    useEffect(() => {
+        console.log("[Swap/useEffect] Running useEffect with isConnected:", isConnected, "publicKey:", publicKey);
+
+        async function fetchDetails() {
+            
+            if (!publicKey) {
+                console.log("[Swap/fetchDetails] No public key available, skipping fetch");
+                return;
+            }
+
+            try {
+                console.log("[Swap/fetchDetails] Fetching portfolio and tokens...");
+                const portfolio = await getUserPortfolio(publicKey);
+                const allTokens = await getListOfTokens();
+                console.log("[Swap/fetchDetails] Portfolio:", portfolio, "All tokens:", allTokens);
+
+                const tokenPair = allTokens.find(token =>
+                    (token.tokenSymbol === toTokenSymbol)
+                );
+
+                console.log("[Swap/fetchDetails] Found token pair:", tokenPair);
+
+                if (!portfolio || !allTokens) {
+                    console.error("[Swap/fetchDetails] Missing portfolio or tokens data");
+                    toast.error("Failed to fetch portfolio or tokens.");
+                    return;
+                }
+                if (!tokenPair) {
+                    console.error("[Swap/fetchDetails] Token pair not found");
+                    toast.error("Token pair not found.");
+                    return;
+                }
+
+                setTokenPair({
+                    fromTokenSymbol: fromTokenSymbol,
+                    toTokenSymbol: toTokenSymbol,
+                    fromTokenAddress: allTokens.find(token => token.tokenSymbol === fromTokenSymbol)?.tokenContractAddress || "11111111111111111111111111111111",
+                    toTokenAddress: tokenPair.tokenContractAddress || "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    decimalsSold: allTokens.find(token => token.tokenSymbol === fromTokenSymbol)?.decimals.toString() || "9"
+                })
+                setToToken("USDC");
+                setFromToken(fromTokenSymbol);
+                setAmount(0.01);
+            } catch (error) {
+                console.error("[Swap/fetchDetails] Error fetching details:", error);
+                toast.error("Failed to fetch token details.");
+            }
+        }
+        fetchDetails();
+    }, [publicKey, fromTokenSymbol, toTokenSymbol]);
+
+    if (!publicKey) {
+        console.log("[Swap] No public key - showing error and returning null");
+        toast.error("Please connect your OKX wallet to swap tokens.");
+        return null;
+    }
 
     const handleMaxAmount = () => {
-        setAmount(fromToken.balance);
+        console.log("[Swap/handleMaxAmount] Setting max amount to 100 (placeholder)");
+        setAmount(amount);
     };
 
-    const handleSwap = async () => {
-        setIsLoading(true);
+    const estimatedAmount = amount ? (amount * 0.99).toFixed(6) : "0";
+    console.log("[Swap] Calculated estimatedAmount:", estimatedAmount);
+
+    const handleSwapTokens = async () => {
+        console.log("[Swap/handleSwapTokens] Starting swap process");
+
         try {
-            const response = await axios.post(`${BASEHOST}/swap`, {
-                fromTokenAddress: fromToken.address,
-                toTokenAddress: toToken.address,
-                amount: amount,
+            if (!publicKey) {
+                console.error("[Swap/handleSwapTokens] No public key available");
+                toast.error("Please connect your OKX wallet to swap tokens.");
+                return;
+            }
+            if (!fromToken || !toToken) {
+                console.error("[Swap/handleSwapTokens] Missing tokens:", { fromToken, toToken });
+                return;
+            }
+            if (!amount || isNaN(Number(amount))) {
+                console.error("[Swap/handleSwapTokens] Invalid amount:", amount);
+                return;
+            }
+            if (Number(amount) <= 0) {
+                console.error("[Swap/handleSwapTokens] Amount too low:", amount);
+                return;
+            }
+            if (!tokenPair) {
+                console.error("[Swap/handleSwapTokens] Token pair not found");
+                return;
+            }
+
+            console.log("[Swap/handleSwapTokens] Creating swap transaction with params:", {
+                publicKey,
+                amount,
+                fromTokenAddress: tokenPair.fromTokenAddress,
+                toTokenAddress: tokenPair.toTokenAddress,
+                slippage: 0.01
             });
-            toast.success("Swap executed successfully!");
-            setOpenConfirm(false);
+
+            const transaction = await CreateSwapTransaction(
+                publicKey,
+                amount * Math.pow(10, parseInt(tokenPair.decimalsSold)),
+                tokenPair.fromTokenAddress,
+                tokenPair.toTokenAddress,
+                0.01
+            );
+
+            if (!transaction) {
+                console.error("[Swap/handleSwapTokens] Failed to create transaction");
+                toast.error("Failed to create swap transaction. Please try again.");
+                return;
+            }
+
+            console.log("[Swap/handleSwapTokens] Transaction created:", transaction);
+            setIsLoading(true);
+            console.log("[Swap/handleSwapTokens] Set loading to true");
+
+            if (transaction.transaction instanceof Transaction) {
+                console.log("[Swap/handleSwapTokens] Handling legacy Transaction");
+                const signedTransaction = await signAndSendTransaction(transaction.transaction);
+
+                if (!signedTransaction) {
+                    console.error("[Swap/handleSwapTokens] Failed to sign transaction");
+                    toast.error("Failed to sign transaction. Please try again.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                console.log("[Swap/handleSwapTokens] Transaction signed and sent:", signedTransaction);
+                toast.success("Swap completed successfully!");
+            } else {
+                console.log("[Swap/handleSwapTokens] Handling VersionedTransaction");
+                // TODO: Implement VersionedTransaction handling
+                console.warn("VersionedTransaction handling not yet implemented");
+                toast.warning("Versioned transactions not yet supported");
+            }
         } catch (error) {
-            toast.error("Swap failed. Please try again.");
+            console.error("[Swap/handleSwapTokens] Error during swap:", error);
+            toast.error("An error occurred while processing the swap. Please try again.");
         } finally {
             setIsLoading(false);
+            console.log("[Swap/handleSwapTokens] Set loading to false");
+            setOpenConfirm(false);
+            console.log("[Swap/handleSwapTokens] Closed confirmation dialog");
         }
     };
 
-    const estimatedAmount = amount ? (parseFloat(amount) * 0.99).toFixed(6) : "0"; // Mock calculation
+    console.log("[Swap] Rendering component with state:", {
+        fromToken,
+        toToken,
+        tokenPair,
+        isLoading,
+        openConfirm,
+        amount,
+        estimatedAmount,
+        isConnected,
+        publicKey
+    });
 
     return (
         <div className="w-full max-w-md mx-auto bg-card rounded-xl shadow-sm border p-6">
@@ -80,15 +216,15 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                     <div className="flex justify-between items-center">
                         <label className="text-sm font-medium text-muted-foreground">From</label>
                         <span className="text-sm text-muted-foreground">
-                            Balance: {fromToken.balance}
+                            Balance: {/* Add balance display here if available */}
                         </span>
                     </div>
                     <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-3">
                         <Input
                             type="number"
                             placeholder="0.0"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            value={amount || ""}
+                            onChange={(e) => setAmount(Number(e.target.value))}
                             className="border-0 bg-transparent text-lg font-medium flex-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <div className="flex items-center gap-2">
@@ -100,32 +236,9 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                             >
                                 Max
                             </Button>
-                            <Select
-                                value={fromToken.symbol}
-                                onValueChange={(value) =>
-                                    setFromToken(tokens.find((t) => t.symbol === value) || fromToken)
-                                }
-                            >
-                                <SelectTrigger className="w-[120px]">
-                                    <SelectValue placeholder="Select token" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {tokens.map((token) => (
-                                        <SelectItem key={token.symbol} value={token.symbol}>
-                                            <div className="flex items-center gap-2">
-                                                {token.logo && (
-                                                    <img
-                                                        src={token.logo}
-                                                        alt={token.symbol}
-                                                        className="w-5 h-5 rounded-full"
-                                                    />
-                                                )}
-                                                {token.symbol}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="w-[120px] px-3 py-2 bg-background rounded-md text-sm font-medium">
+                                {fromToken || fromTokenSymbol}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -135,7 +248,11 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                     <Button
                         variant="outline"
                         size="icon"
-                        onClick={handleSwapTokens}
+                        onClick={() => {
+                            const temp = fromToken;
+                            setFromToken(toToken);
+                            setToToken(temp);
+                        }}
                         className="rounded-full w-10 h-10"
                     >
                         <ArrowDown className="w-4 h-4" />
@@ -153,48 +270,9 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                             readOnly
                             className="border-0 bg-transparent text-lg font-medium flex-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
-                        <Select
-                            value={toToken.symbol}
-                            onValueChange={(value) =>
-                                setToToken(tokens.find((t) => t.symbol === value) || toToken)
-                            }
-                        >
-                            <SelectTrigger className="w-[120px]">
-                                <SelectValue placeholder="Select token" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {tokens.map((token) => (
-                                    <SelectItem key={token.symbol} value={token.symbol}>
-                                        <div className="flex items-center gap-2">
-                                            {token.logo && (
-                                                <img
-                                                    src={token.logo}
-                                                    alt={token.symbol}
-                                                    className="w-5 h-5 rounded-full"
-                                                />
-                                            )}
-                                            {token.symbol}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                {/* Swap Details */}
-                <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex justify-between">
-                        <span>Exchange Rate</span>
-                        <span>1 {fromToken.symbol} = 0.99 {toToken.symbol}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Price Impact</span>
-                        <span className="text-green-500">0.1%</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Minimum Received</span>
-                        <span>{(parseFloat(amount) * 0.985).toFixed(6)} {toToken.symbol}</span>
+                        <div className="w-[120px] px-3 py-2 bg-background rounded-md text-sm font-medium">
+                            {toToken || toTokenSymbol}
+                        </div>
                     </div>
                 </div>
 
@@ -204,7 +282,7 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                         <Button
                             size="lg"
                             className="w-full"
-                            disabled={!amount || parseFloat(amount) <= 0}
+                            disabled={!amount || amount <= 0}
                         >
                             Swap
                         </Button>
@@ -216,32 +294,18 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                         <div className="space-y-4">
                             <div className="bg-muted/50 rounded-lg p-4">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-lg font-medium">{amount} {fromToken.symbol}</span>
+                                    <span className="text-lg font-medium">{amount} {fromToken || fromTokenSymbol}</span>
                                     <div className="flex items-center gap-2">
-                                        {fromToken.logo && (
-                                            <img
-                                                src={fromToken.logo}
-                                                alt={fromToken.symbol}
-                                                className="w-6 h-6 rounded-full"
-                                            />
-                                        )}
-                                        <span>{fromToken.symbol}</span>
+                                        <span>{fromToken || fromTokenSymbol}</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-center my-2">
                                     <ArrowDown className="w-5 h-5" />
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-lg font-medium">{estimatedAmount} {toToken.symbol}</span>
+                                    <span className="text-lg font-medium">{estimatedAmount} {toToken || toTokenSymbol}</span>
                                     <div className="flex items-center gap-2">
-                                        {toToken.logo && (
-                                            <img
-                                                src={toToken.logo}
-                                                alt={toToken.symbol}
-                                                className="w-6 h-6 rounded-full"
-                                            />
-                                        )}
-                                        <span>{toToken.symbol}</span>
+                                        <span>{toToken || toTokenSymbol}</span>
                                     </div>
                                 </div>
                             </div>
@@ -249,35 +313,18 @@ export function Swap({ tokens, defaultFromToken, defaultToToken }: SwapProps) {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Exchange Rate</span>
-                                    <span>1 {fromToken.symbol} = 0.99 {toToken.symbol}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Price Impact</span>
-                                    <span className="text-green-500">0.1%</span>
+                                    <span>1 {fromToken || fromTokenSymbol} ≈ 0.99 {toToken || toTokenSymbol}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Minimum Received</span>
-                                    <span>{(parseFloat(amount) * 0.985).toFixed(6)} {toToken.symbol}</span>
+                                    <span>{(amount ? amount : 0 * 0.985).toFixed(6)} {toToken || toTokenSymbol}</span>
                                 </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Slippage Tolerance</span>
-                                    <span className="text-sm font-medium">{slippage}%</span>
-                                </div>
-                                <Slider
-                                    value={[slippage]}
-                                    max={5}
-                                    step={0.1}
-                                    onValueChange={(value) => setSlippage(value[0])}
-                                />
                             </div>
 
                             <Button
                                 size="lg"
                                 className="w-full"
-                                onClick={handleSwap}
+                                onClick={handleSwapTokens}
                                 disabled={isLoading}
                             >
                                 {isLoading ? (

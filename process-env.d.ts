@@ -8,6 +8,8 @@ declare global {
             ENVIRONMENT: string;
             NEWSDATAAPIKEY: string;
             NEXT_PUBLIC_OPENAI_API_KEY: string;
+            SOLANA_RPC_URL: string;
+            OKX_PROJECT_ID: string;
         }
     }
 }

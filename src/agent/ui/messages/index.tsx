@@ -45,6 +45,7 @@ export default function Messages() {
                                     if (block.name === "DISPLAY") {
                                         return (
                                             <Summary key={j} content={block.props?.content ?? ""} />
+                                            
                                         );
                                     }
                                     if (block.name === "TEXT" && !isUser) {
@@ -64,21 +65,20 @@ export default function Messages() {
                                     return null;
                                 })}
                             </div>
-                            {message.blocks.map((block, j) => {
-                                if (block.name === "SWAP") {
+                            {(() => {
+                                const firstSwapIndex = message.blocks.findIndex(block => block.name === "SWAP");
+                                if (firstSwapIndex !== -1) {
+                                    const block = message.blocks[firstSwapIndex];
                                     return (
                                         <Swap
-                                            key={j}
+                                            key={firstSwapIndex}
                                             toTokenSymbol={block.props.toTokenSymbol}
                                             fromTokenSymbol={block.props.fromTokenSymbol}
-                                            toTokenAddress={block.props.toTokenAddress}
-                                            fromTokenAddress={block.props.fromTokenAddress}
-                                            amount={block.props.amount}
                                         />
                                     );
                                 }
                                 return null;
-                            })}
+                            })()}
                             <span className="text-xs text-[var(--muted-foreground)] mt-1">
                                 {format(timestamp, "h:mm a")}
                             </span>

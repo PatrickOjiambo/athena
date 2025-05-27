@@ -19,7 +19,7 @@ export default function FloatingChat() {
           <BotIcon className="w-6 h-6" />
         </button>
       ) : (
-        <div className="bg-[var(--background)] rounded-lg shadow-xl w-[400px] h-[600px] flex flex-col overflow-hidden animate-slide-up border border-[var(--border-color)]">
+        <div className="bg-[var(--background)] rounded-lg shadow-xl w-[500px] h-[600px] flex flex-col overflow-hidden animate-slide-up border border-[var(--border-color)]">
           <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
             <h2 className="text-lg font-semibold text-[var(--foreground)]">
               Chat with athena AI
