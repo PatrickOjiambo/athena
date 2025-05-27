@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Button } from './ui/button';
 import { OKXWalletButton } from './okx-wallet-button';
 
 const AppHeader: React.FC = () => {
@@ -13,9 +12,6 @@ const AppHeader: React.FC = () => {
         <h1 className="text-xl font-bold text-white  font-mono">Athena</h1>
       </div>
       <div className="flex gap-4 items-center">
-        {/* <Button className="bg-okx-purple text-white hover:bg-okx-purple/80 text-sm">
-          Connect Wallet
-        </Button> */}
         <OKXWalletButton />
       </div>
     </header>
