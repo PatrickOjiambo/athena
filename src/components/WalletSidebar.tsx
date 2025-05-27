@@ -52,6 +52,7 @@ const WalletSidebar: React.FC = () => {
   const fetchTokenData = async (address: string) => {
     try {
       setIsLoading(true);
+      console.log("Fetching for address:", address);
       const tokenAssets = await getUserPortfolio(address);
       setTokens(tokenAssets);
       
