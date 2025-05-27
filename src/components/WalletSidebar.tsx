@@ -182,10 +182,6 @@ const WalletSidebar: React.FC = () => {
       <div>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-medium">Assets</h3>
-          <button className="text-xs text-okx-purple flex items-center">
-            View All 
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </button>
         </div>
         
         {tokens.length > 0 ? (
