@@ -1,5 +1,5 @@
+"use server"
 import axios from "axios";
-import "../../../envConfig";
 import getOKXSignatureAndTimestamp from "../sign_okx_request";
 import { getUserPortfolioResponseType, TokenAssets } from "@/types/okx_types";
 import { Errors } from "@/errors/error_messages";

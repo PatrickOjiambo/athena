@@ -1,7 +1,6 @@
 import {stringify} from "querystring";
 import { createHmac } from "crypto";
 import { MyError } from "@/errors/type";
-import "../../envConfig";
 
 interface GetOKXPassphrase {
     timestamp: Date, 

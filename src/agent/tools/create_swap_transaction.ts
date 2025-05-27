@@ -1,7 +1,7 @@
+"use server"
 import { Errors } from "@/errors/error_messages";
 import { MyError } from "@/errors/type";
 import base58 from "bs58";
-import "../../../envConfig";
 import getOKXSignatureAndTimestamp from "../sign_okx_request";
 import axios from "axios";
 import { swapDataResponse } from "@/types/okx_types";
