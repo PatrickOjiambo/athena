@@ -6,6 +6,7 @@ import getTransactionHistory from '@/agent/tools/transaction_history';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { formatTimestamp } from '@/lib/utils';
 
 const formatTransactionType = (itype: string) => {
   const types: Record<string, string> = {
@@ -107,7 +108,7 @@ export default function TransactionsPage() {
                       </span>
                     </td>
                     <td className="text-sm text-muted-foreground">
-                      {new Date(tx.txTime).toLocaleString()}
+                      {formatTimestamp(tx.txTime)}
                     </td>
                   </tr>
                 ))}
