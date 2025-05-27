@@ -7,13 +7,13 @@ import axios from "axios";
 import { swapDataResponse } from "@/types/okx_types";
 import { Connection, VersionedTransaction, Transaction } from "@solana/web3.js";
 
-export default async function (user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<PreparedTransaction> {
+export default async function (user_wallet: string, amount: number, fromTokenAddress: string, toTokenAddress: string, slippage: number): Promise<string> {
     try {
         if (slippage > 1 || slippage < 0) {
             throw new MyError("Invalid slippage value");
         }
         const swapData = await getSwapDetails(user_wallet, amount, fromTokenAddress, toTokenAddress, slippage.toString());
-        return prepareTransaction(swapData);
+        return swapData;
     } catch(err) {
         if (err instanceof MyError) {
             throw err;
