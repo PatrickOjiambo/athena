@@ -1,27 +1,13 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { Button } from './ui/button';
-
-// Sample data for charts
-const portfolioData = [
-  { name: 'SOL', value: 1245, color: '#9945FF' },
-  { name: 'JUP', value: 587.5, color: '#14F195' },
-  { name: 'USDC', value: 420.69, color: '#2775CA' },
-  { name: 'BONK', value: 104.23, color: '#F0B90B' },
-];
-
-const pnlData = [
-  { date: 'May 14', value: 2100 },
-  { date: 'May 15', value: 2050 },
-  { date: 'May 16', value: 2200 },
-  { date: 'May 17', value: 2320 },
-  { date: 'May 18', value: 2180 },
-  { date: 'May 19', value: 2280 },
-  { date: 'May 20', value: 2357 },
-];
+import { useOKXWallet } from '@/hooks/useOKXWallet';
+import { TokenAssets, TransactionHistory } from '@/types/okx_types';
+import getUserPortfolio from '@/agent/tools/get_user_portfolio';
+import getTransactionHistory from '@/agent/tools/transaction_history';
+import Link from 'next/link';
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
@@ -44,11 +30,165 @@ const CustomTooltip = ({ active, payload }: any) => {
       </div>
     );
   }
-
   return null;
 };
 
+const formatTransactionType = (itype: string) => {
+  const types: Record<string, string> = {
+    '1': 'Transfer',
+    '2': 'Swap',
+    '3': 'Deposit',
+    '4': 'Withdraw'
+  };
+  return types[itype] || itype;
+};
+
 const PortfolioDashboard: React.FC = () => {
+  const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const { isConnected, publicKey } = useOKXWallet();
+  const [portfolioData, setPortfolioData] = useState<Array<{name: string, value: number, color: string}>>([]);
+  const [pnlData, setPnlData] = useState<Array<{date: string, value: number}>>([]);
+  const [riskData, setRiskData] = useState({
+    score: 75,
+    memecoinExposure: '4.4%',
+    stablecoinRatio: '17.8% (USDC)',
+    tokenCount: 4
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPortfolioData = async (address: string) => {
+    try {
+      setIsLoading(true);
+      const tokenAssets = await getUserPortfolio(address);
+      
+      const pieData = tokenAssets.map(token => ({
+        name: token.symbol,
+        value: token.balance * token.tokenPrice,
+        color: getTokenColor(token.symbol)
+      }));
+      setPortfolioData(pieData);
+
+      const pnl = generatePnLData(pieData.reduce((sum, token) => sum + token.value, 0));
+      setPnlData(pnl);
+
+      setRiskData(calculateRiskMetrics(tokenAssets));
+
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTransactionHistory = async (address: string) => {
+  try {
+    setIsHistoryLoading(true);
+    const txHistory = await getTransactionHistory(address);
+    setTransactions(txHistory);
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+  } finally {
+    setIsHistoryLoading(false);
+  }
+};
+
+  useEffect(() => {
+    if (isConnected && publicKey) {
+      fetchPortfolioData(publicKey);
+      fetchTransactionHistory(publicKey);
+      const interval = setInterval(() => {fetchPortfolioData(publicKey);
+      fetchTransactionHistory(publicKey);
+    }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isConnected, publicKey]);
+
+  // Helper functions
+const getTokenColor = (symbol: string): string => {
+  // Predefined colors for common tokens
+  const predefinedColors: Record<string, string> = {
+    'SOL': '#F0B90B',
+    'JUP': '#14F195',
+    'USDC': '#2775CA',
+    'BONK': '#9945FF',
+    'BTC': '#F7931A',
+    'ETH': '#627EEA',
+    'OKB': '#2E60FF',
+    'DOGE': '#C2A633',
+    'SHIB': '#E42D04',
+    'MATIC': '#8247E5'
+  };
+
+  // Return predefined color if available
+  if (predefinedColors[symbol]) {
+    return predefinedColors[symbol];
+  }
+
+  // Generate consistent random color for unknown tokens
+  const hash = Array.from(symbol).reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+
+  const hue = Math.abs(hash) % 360;
+  const saturation = 70 + Math.abs(hash % 10); // 70-80%
+  const lightness = 50 + Math.abs(hash % 15); // 50-65%
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
+
+  const generatePnLData = (currentValue: number) => {
+    const days = 7;
+    const data = [];
+    const today = new Date();
+    
+    for (let i = days; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: currentValue * (0.95 + Math.random() * 0.1) // Random fluctuation
+      });
+    }
+    return data;
+  };
+
+  const calculateRiskMetrics = (tokens: TokenAssets[]) => {
+    const totalValue = tokens.reduce((sum, token) => sum + (token.balance * token.tokenPrice), 0);
+    const riskyValue = tokens.filter(t => t.isRiskToken)
+                           .reduce((sum, token) => sum + (token.balance * token.tokenPrice), 0);
+    
+    return {
+      score: Math.min(100, Math.round((riskyValue / totalValue) * 150)),
+      memecoinExposure: `${((riskyValue / totalValue) * 100).toFixed(1)}%`,
+      stablecoinRatio: `${(tokens.filter(t => t.symbol === 'USDC').reduce((sum, token) => sum + (token.balance * token.tokenPrice), 0) / totalValue * 100).toFixed(1)}% (USDC)`,
+      tokenCount: tokens.length
+    };
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Portfolio Dashboard</h2>
+        <Card className="glass-card p-8 text-center">
+          <p className="text-lg mb-4">Please connect your wallet to view portfolio data</p>
+          <p className="text-muted-foreground">Use the connect button in the navbar</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Portfolio Dashboard</h2>
+        <Card className="glass-card p-8 text-center">
+          <p>Loading portfolio data...</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Portfolio Dashboard</h2>
@@ -57,7 +197,6 @@ const PortfolioDashboard: React.FC = () => {
         <TabsList className="bg-white/5 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="recommendations">AI Recommendations</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
@@ -89,7 +228,7 @@ const PortfolioDashboard: React.FC = () => {
                 {portfolioData.map((item) => (
                   <div key={item.name} className="flex items-center">
                     <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-sm">{item.name}: ${item.value}</span>
+                    <span className="text-sm">{item.name}: ${item.value.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -129,8 +268,12 @@ const PortfolioDashboard: React.FC = () => {
                 <p className="text-muted-foreground">AI-generated risk analysis of your portfolio</p>
               </div>
               <div className="flex items-center mt-2 md:mt-0">
-                <div className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium">
-                  High Risk • 75/100
+                <div className={`px-3 py-1 ${
+                  riskData.score > 70 ? 'bg-amber-500/20 text-amber-400' :
+                  riskData.score > 30 ? 'bg-yellow-500/20 text-yellow-400' :
+                  'bg-green-500/20 text-green-400'
+                } rounded-full text-sm font-medium`}>
+                  {riskData.score > 70 ? 'High' : riskData.score > 30 ? 'Medium' : 'Low'} Risk • {riskData.score}/100
                 </div>
               </div>
             </div>
@@ -139,12 +282,12 @@ const PortfolioDashboard: React.FC = () => {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm">Risk Score</span>
-                  <span className="text-sm">75/100</span>
+                  <span className="text-sm">{riskData.score}/100</span>
                 </div>
                 <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" 
-                    style={{ width: '75%' }}
+                    style={{ width: `${riskData.score}%` }}
                   />
                 </div>
               </div>
@@ -152,19 +295,19 @@ const PortfolioDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-card p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Memecoin Exposure</p>
-                  <p className="font-medium">4.4% of portfolio</p>
+                  <p className="font-medium">{riskData.memecoinExposure} of portfolio</p>
                   <p className="text-xs text-amber-400">Moderate risk factor</p>
                 </div>
                 
                 <div className="glass-card p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Stablecoin Ratio</p>
-                  <p className="font-medium">17.8% (USDC)</p>
+                  <p className="font-medium">{riskData.stablecoinRatio}</p>
                   <p className="text-xs text-red-400">High risk factor</p>
                 </div>
                 
                 <div className="glass-card p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Token Diversification</p>
-                  <p className="font-medium">4 tokens</p>
+                  <p className="font-medium">{riskData.tokenCount} tokens</p>
                   <p className="text-xs text-amber-400">Moderate risk factor</p>
                 </div>
               </div>
@@ -179,18 +322,35 @@ const PortfolioDashboard: React.FC = () => {
         <TabsContent value="history">
           <Card className="glass-card p-5">
             <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
-            <p className="text-muted-foreground">
-              Connect your wallet to view your transaction history.
-            </p>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="recommendations">
-          <Card className="glass-card p-5">
-            <h3 className="text-lg font-semibold mb-4">AI Recommendations</h3>
-            <p className="text-muted-foreground">
-              Connect your wallet to receive personalized AI recommendations.
-            </p>
+            {isHistoryLoading ? (
+              <p>Loading transactions...</p>
+            ) : transactions.length > 0 ? (
+              <div className="space-y-3">
+                {transactions.slice(0, 5).map((tx) => (
+                  <div key={tx.txHash} className="border-b border-white/10 pb-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">
+                        {formatTransactionType(tx.itype)}
+                      </span>
+                      <span className={tx.txStatus === 'success' ? 'text-green-400' : 'text-red-400'}>
+                        {tx.amount} {tx.symbol}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>{new Date(tx.txTime).toLocaleString()}</span>
+                      <span>{tx.txStatus}</span>
+                    </div>
+                  </div>
+                ))}
+                <Link href="/transactions" passHref>
+                  <Button variant="link" className="text-okx-purple mt-4 cursor-pointer">
+                    View Full History
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <p>No transactions found</p>
+            )}
           </Card>
         </TabsContent>
       </Tabs>

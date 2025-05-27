@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { OKXWalletButton } from './okx-wallet-button';
+import Image from 'next/image';
 
 const AppHeader: React.FC = () => {
   return (
     <header className="flex items-center justify-between py-4 px-6 border-b border-white/10">
       <div className="flex items-center">
-        <div className="w-8 h-8 rounded-md bg-gradient-purple flex items-center justify-center mr-3">
-          <span className="text-white font-bold">AI</span>
-        </div>
+          {/* <span className="text-white font-bold">AI</span> */}
+          <Image src="/okx.jpg" width={30} height={30} className='mr-2 rounded-xl' alt="OKX Logo" />
         <h1 className="text-xl font-bold text-white  font-mono">Athena</h1>
       </div>
       <div className="flex gap-4 items-center">
