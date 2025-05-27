@@ -8,6 +8,7 @@ import { TokenAssets, TransactionHistory } from '@/types/okx_types';
 import getUserPortfolio from '@/agent/tools/get_user_portfolio';
 import getTransactionHistory from '@/agent/tools/transaction_history';
 import Link from 'next/link';
+import { formatTimestamp } from '@/lib/utils';
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
@@ -35,10 +36,10 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 const formatTransactionType = (itype: string) => {
   const types: Record<string, string> = {
-    '1': 'Transfer',
-    '2': 'Swap',
-    '3': 'Deposit',
-    '4': 'Withdraw'
+    '0': 'Transfer',
+    '1': 'Swap',
+    '2': 'Deposit',
+    '3': 'Withdraw'
   };
   return types[itype] || itype;
 };
@@ -196,7 +197,7 @@ const getTokenColor = (symbol: string): string => {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="bg-white/5 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="history">Transaction History</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
@@ -337,7 +338,7 @@ const getTokenColor = (symbol: string): string => {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{new Date(tx.txTime).toLocaleString()}</span>
+                      <span>{formatTimestamp(tx.txTime)}</span>
                       <span>{tx.txStatus}</span>
                     </div>
                   </div>
