@@ -22,7 +22,7 @@ const TokenCard: React.FC<{ token: TokenAssets; priceChange?: number }> = ({
             <span className="text-xs font-bold">{token.symbol}</span>
           </div>
           <div>
-            <p className="text-sm font-medium">{token.chainName}</p>
+            <p className="text-sm font-medium">{token.symbol}</p>
             <p className="text-xs text-muted-foreground">{token.balance.toFixed(4)} {token.symbol}</p>
           </div>
         </div>

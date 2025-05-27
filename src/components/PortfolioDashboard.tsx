@@ -4,8 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { Button } from './ui/button';
 import { useOKXWallet } from '@/hooks/useOKXWallet';
-import { TokenAssets } from '@/types/okx_types';
+import { TokenAssets, TransactionHistory } from '@/types/okx_types';
 import getUserPortfolio from '@/agent/tools/get_user_portfolio';
+import getTransactionHistory from '@/agent/tools/transaction_history';
+import Link from 'next/link';
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
@@ -31,7 +33,19 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+const formatTransactionType = (itype: string) => {
+  const types: Record<string, string> = {
+    '1': 'Transfer',
+    '2': 'Swap',
+    '3': 'Deposit',
+    '4': 'Withdraw'
+  };
+  return types[itype] || itype;
+};
+
 const PortfolioDashboard: React.FC = () => {
+  const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const { isConnected, publicKey } = useOKXWallet();
   const [portfolioData, setPortfolioData] = useState<Array<{name: string, value: number, color: string}>>([]);
   const [pnlData, setPnlData] = useState<Array<{date: string, value: number}>>([]);
@@ -67,10 +81,25 @@ const PortfolioDashboard: React.FC = () => {
     }
   };
 
+  const fetchTransactionHistory = async (address: string) => {
+  try {
+    setIsHistoryLoading(true);
+    const txHistory = await getTransactionHistory(address);
+    setTransactions(txHistory);
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+  } finally {
+    setIsHistoryLoading(false);
+  }
+};
+
   useEffect(() => {
     if (isConnected && publicKey) {
       fetchPortfolioData(publicKey);
-      const interval = setInterval(() => fetchPortfolioData(publicKey), 30000);
+      fetchTransactionHistory(publicKey);
+      const interval = setInterval(() => {fetchPortfolioData(publicKey);
+      fetchTransactionHistory(publicKey);
+    }, 30000);
       return () => clearInterval(interval);
     }
   }, [isConnected, publicKey]);
@@ -293,9 +322,35 @@ const getTokenColor = (symbol: string): string => {
         <TabsContent value="history">
           <Card className="glass-card p-5">
             <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
-            <p className="text-muted-foreground">
-              {isConnected ? 'Loading transactions...' : 'Connect your wallet to view your transaction history.'}
-            </p>
+            {isHistoryLoading ? (
+              <p>Loading transactions...</p>
+            ) : transactions.length > 0 ? (
+              <div className="space-y-3">
+                {transactions.slice(0, 5).map((tx) => (
+                  <div key={tx.txHash} className="border-b border-white/10 pb-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">
+                        {formatTransactionType(tx.itype)}
+                      </span>
+                      <span className={tx.txStatus === 'success' ? 'text-green-400' : 'text-red-400'}>
+                        {tx.amount} {tx.symbol}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>{new Date(tx.txTime).toLocaleString()}</span>
+                      <span>{tx.txStatus}</span>
+                    </div>
+                  </div>
+                ))}
+                <Link href="/transactions" passHref>
+                  <Button variant="link" className="text-okx-purple mt-4 cursor-pointer">
+                    View Full History
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <p>No transactions found</p>
+            )}
           </Card>
         </TabsContent>
       </Tabs>
