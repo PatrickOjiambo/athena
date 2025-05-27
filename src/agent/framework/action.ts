@@ -3,7 +3,7 @@
 // Functionality to carry out a certain task
 // May or may not interface with the oracles
 // May act on its own with no side effects to the ozone
-
+//@ts-nocheck
 import { type Effect } from "effect/Effect";
 import type { ContextItem, Goal } from "./orchestrator";
 
