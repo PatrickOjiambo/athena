@@ -40,6 +40,7 @@ export default async function getUserPortfolio(user_address: string): Promise<To
             return data.data[0]?.tokenAssets ?? [];
         } else {
             console.log("Received data", apiResults.data);
+            console.log("Tokens", apiResults.data.data[0]?.tokenAssets);
             console.error("Error parsing", parsed.error);
             throw new MyError(Errors.UNEXPECTED_RESPONSE);
         }
